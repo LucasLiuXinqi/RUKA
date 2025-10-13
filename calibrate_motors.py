@@ -24,6 +24,17 @@ def get_key():
         return ch
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+        if ch == "\x1b":
+            # likely an escape sequence; read the next two chars
+            ch += sys.stdin.read(2)
+        return ch
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 
 class HandCalibrator:
@@ -61,6 +72,13 @@ class HandCalibrator:
         if self.testing:
             print("------------ MOTOR ", motor_id, " ------------")
         if self.hand.hand_type == "right":
+            
+            
+            
+            
+            
+            
+            
             start_pos = 100
             f = 1
         elif self.hand.hand_type == "left":
