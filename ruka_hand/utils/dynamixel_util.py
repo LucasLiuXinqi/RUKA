@@ -201,23 +201,37 @@ class DynamixelClient:
         remaining_ids = list(self.motor_ids)
         while remaining_ids:
 
-            for motor_id in remaining_ids:
-
+            for motor_id in list(remaining_ids):
                 dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(
                     self.port_handler, motor_id, ADDR_TORQUE_ENABLE, int(enabled)
                 )
                 if dxl_comm_result != COMM_SUCCESS:
-                    print("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
-                    self.packet_handler.reboot(self.port_handler, motor_id)
-                elif dxl_error != 0:
+                    # Communiction level error (e.g. port/baud/permission)
+                    msg = self.packet_handler.getTxRxResult(dxl_comm_result)
                     logging.error(
-                        "%s" % self.packet_handler.getRxPacketError(dxl_error)
+                        "Failed to set torque for ID %s: %s", motor_id, msg
                     )
-                    self.packet_handler.reboot(self.port_handler, motor_id)
+                    try:
+                        # Attempt a reboot on the motor as a recovery step
+                        self.packet_handler.reboot(self.port_handler, motor_id)
+                    except Exception:
+                        logging.debug("Reboot failed for motor %s", motor_id)
+                elif dxl_error != 0:
+                    # Packet level error reported by motor
+                    msg = self.packet_handler.getRxPacketError(dxl_error)
+                    logging.error(
+                        "Motor ID %s reported error while setting torque: %s",
+                        motor_id,
+                        msg,
+                    )
+                    try:
+                        self.packet_handler.reboot(self.port_handler, motor_id)
+                    except Exception:
+                        logging.debug("Reboot failed for motor %s", motor_id)
                 else:
                     remaining_ids.remove(motor_id)
                     logging.info(
-                        "Dynamixel#%d has been successfully connected" % motor_id
+                        "Dynamixel#%d torque set to %s", motor_id, enabled
                     )
             if remaining_ids:
                 logging.error(
@@ -230,6 +244,47 @@ class DynamixelClient:
                 break
             time.sleep(retry_interval)
             retries -= 1
+
+    def diagnose_motors(self, motor_ids: Optional[Sequence[int]] = None):
+        """Performs a quick connectivity check for motors and returns a dict
+        mapping motor_id -> dict(status, message, model_number).
+
+        This reads the model number control table entry for each motor and
+        reports communication or packet errors. Useful for diagnosing whether
+        failures are due to wiring/baud/permission or motor-level errors.
+        """
+        self.check_connected()
+        if motor_ids is None:
+            motor_ids = self.motor_ids
+
+        results = {}
+        for m in motor_ids:
+            try:
+                # Read a known-present register (present position low bytes)
+                # Use a 2-byte read of the present position's lower half to
+                # test basic connectivity.
+                value, comm_result, error = self.packet_handler.read2ByteTxRx(
+                    self.port_handler, m, ADDR_PRESENT_POSITION
+                )
+            except Exception as e:
+                results[m] = {"status": "exception", "message": str(e), "model": None}
+                continue
+
+            if comm_result != COMM_SUCCESS:
+                results[m] = {
+                    "status": "comm_error",
+                    "message": self.packet_handler.getTxRxResult(comm_result),
+                    "model": None,
+                }
+            elif error != 0:
+                results[m] = {
+                    "status": "motor_error",
+                    "message": self.packet_handler.getRxPacketError(error),
+                    "model": None,
+                }
+            else:
+                results[m] = {"status": "ok", "message": "", "model": int(value)}
+        return results
 
     def sync_write(
         self,

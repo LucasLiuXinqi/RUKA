@@ -10,7 +10,7 @@ parser.add_argument(
     "--hand_type",
     type=str,
     help="Hand you'd like to teleoperate",
-    default="left",
+    default="right",
 )
 args = parser.parse_args()
 hand = Hand(args.hand_type)
