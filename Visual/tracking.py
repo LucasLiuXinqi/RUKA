@@ -192,15 +192,15 @@ LOW_ID = 2
 MOTOR_ID = 20
 PORT = "/dev/ttyUSB0"
 BAUD = 2_000_000
-START_POS = 1200.0
-END_POS = 1800.0
-NUM_POSITIONS = 25          # discrete points along the stroke
-CYCLES = 4                  # forward+reverse pairs (total passes = 2*CYCLES)
+START_POS = 2735
+END_POS = 1333
+NUM_POSITIONS = 10          # discrete points along the stroke
+CYCLES = 500                  # forward+reverse pairs (total passes = 2*CYCLES)
 SAMPLES_PER_POS = 10        # frames to sample at each stop
 SETTLE_PER_POS = 2.0       # s to wait after move (when not DRY)
-DRY_RUN = True              # if True, do not open or move the motor
+DRY_RUN = False              # if True, do not open or move the motor
 
-SAVE_PATH = "tracking_results_pingpong.npz"
+SAVE_PATH = "tracking_results_2_springs.npz"
 
 # --------------------------
 # Optional Dynamixel client import
@@ -279,7 +279,7 @@ def activate_camera():
 def motor_setup():
     if DRY_RUN:
         return None
-    client = DxlClient([MOTOR_ID], port=PORT, baud=BAUD)
+    client = DxlClient([MOTOR_ID], port=PORT)
     client.connect()
     print("Enabling torque...")
     client.set_torque_enabled(True)
@@ -290,6 +290,8 @@ def motor_setup():
 # Main
 # --------------------------
 def main():
+    start_time = time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"\n===== Experiment started at {start_time} =====\n")
     pipe, detector, K, dist = activate_camera()
     client = motor_setup()
 
@@ -313,7 +315,7 @@ def main():
             if DRY_RUN:
                 print(f"DRY RUN: would set motor {MOTOR_ID} -> {target:.1f}")
             else:
-                client.set_pos_indv(MOTOR_ID, target)
+                client.set_pos_indv(MOTOR_ID, int(round(target)))
                 time.sleep(SETTLE_PER_POS)
 
             # Collect frames/angles at this stop
@@ -332,8 +334,8 @@ def main():
                     time.sleep(0.02)
                     continue
 
-                rvecs, tvecs = estimate_marker_pose(corners, ids, K, dist, MARKER_SIZE_M)
-
+                rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners, MARKER_SIZE_M, K, dist)
+                
                 # Build id -> rvec
                 id_list = ids.flatten().tolist()
                 id_to_rvec = {
@@ -361,7 +363,7 @@ def main():
                 pip_angle = np.degrees(np.arccos(np.clip(np.dot(mid_x, low_x), -1.0, 1.0)))
                 pairs.append((dip_angle, pip_angle))
 
-                time.sleep(0.2)  # vary frames slightly
+                time.sleep(0.02)  # vary frames slightly
 
             # Aggregate with outlier rejection
             if len(pairs) == 0:
@@ -386,8 +388,8 @@ def main():
 
             print(f"idx {idx} ({direction}): DIP={dip_avg:.2f}° (n={dip_f.size}), "
                   f"PIP={pip_avg:.2f}° (n={pip_f.size})")
-            
-            time.sleep(1)
+
+            time.sleep(0.02)
 
     finally:
         # Cleanup
@@ -455,6 +457,8 @@ def main():
                          NUM_POSITIONS, CYCLES, SAMPLES_PER_POS, SETTLE_PER_POS, MARKER_SIZE_M], dtype=float)
     )
     print(f"Saved {SAVE_PATH}")
+    end_time = time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"\n===== Experiment finished at {end_time} =====\n")
 
 if __name__ == "__main__":
     main()
