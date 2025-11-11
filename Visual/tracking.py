@@ -197,10 +197,10 @@ END_POS = 1333
 NUM_POSITIONS = 10          # discrete points along the stroke
 CYCLES = 500                  # forward+reverse pairs (total passes = 2*CYCLES)
 SAMPLES_PER_POS = 10        # frames to sample at each stop
-SETTLE_PER_POS = 2.0       # s to wait after move (when not DRY)
+SETTLE_PER_POS = 0.5       # s to wait after move (when not DRY)
 DRY_RUN = False              # if True, do not open or move the motor
 
-SAVE_PATH = "tracking_results_2_springs.npz"
+SAVE_PATH = "tracking_results_up_spring.npz"
 
 # --------------------------
 # Optional Dynamixel client import

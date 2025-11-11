@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from itertools import cycle
 
 # load data
-data = np.load("tracking_results_old.npz")
+data = np.load("tracking_results_up_spring.npz")
 pos_all = data["logged_cmd"]
 dip_all = data["dip"]
 pip_all = data["pip"]
@@ -49,5 +49,5 @@ plt.legend(
 )
 plt.grid(True)
 plt.tight_layout()
-plt.savefig("angle_vs_position_old.png", dpi=300)
-print("Saved plot: angle_vs_position_old.png")
+plt.savefig("angle_vs_position_up_spring.png", dpi=300)
+print("Saved plot: angle_vs_position_up_spring.png")
