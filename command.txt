@@ -1,0 +1,11 @@
+python speed_cycle_test.py \
+  --hand-type right \
+  --finger-order Middle \
+  --cycles 30 \
+  --traj-len 30 \
+  --traj-sleep 0.01 \
+  --flex-ratio 1.0 \
+  --log-path logs/speed_test_middle.csv
+
+1.46~19.94: 30 cycles
+==> each cycle cost 0.616s ==> each bend cost approx 0.3s ==> 4 hertz

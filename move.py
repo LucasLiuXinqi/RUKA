@@ -19,27 +19,26 @@ hand = Hand(args.hand_type)
 # # Min/max degrees for each motor
 # min_deg = np.array([0 , -40, 0 , -15, 0 , 0 , 0 , -5 , 0 , 0 , 0 , 0 , 0  , 0 , -60, -55], dtype=float)
 # max_deg = np.array([90,  5 , 85,  5 , 90, 85, 70,  20, 90, 80, 90, 90, 145, 90,  60,  0 ], dtype=float)
-#           motor   1   2   3    4   5     6   7    8    9   10  11   12   13   14   15   16
-min_deg = np.array([0 , 0 , 0  , 0 , 0  , -85, 0  , 0 , -90, 0 , 0  , 0  , 0  , 0 , -60, -30], dtype=float)
-max_deg = np.array([90, 15, 120, 23, 110,  0 , 120, 45,  0 , 80, 110, 110, 170, 90,  60,  30 ], dtype=float)
+#           motor   1   2   3    4   5    6     7    8      9   10  11   12   13   14   15   16
+min_deg = np.array([0 , 0 , 0  , 0 , 0  , 0,    0  , 0 ,    0, 0 , 0  , 0  , 0  , 0 , -60, -30], dtype=float)
+max_deg = np.array([90, 15, 120, 23, 110, 85 ,  120, 45,    90 , 80, 110, 110, 170, 90,  60,  30 ], dtype=float)
 
-def normalize_to_motor(test_pos):
-    test_pos = np.array(test_pos, dtype=float)
-    clamped = np.clip(test_pos, min_deg, max_deg)
+def normalize_to_motor(input_pos):
+    input_pos = np.array(input_pos, dtype=float)
+    clamped = np.clip(input_pos, min_deg, max_deg)
     normed = clamped / (max_deg - min_deg)
-    normed[9] = normed[9] - (35/110) * normed[10]
+    # compensation of MCP movement
+    normed[9] = normed[9] - (40/110) * normed[10]   # angle when dip motor keep its tensioned position while mcp motor bend to the maxmium position
     normed[0] = normed[0] - (40/110) * normed[2]
-    normed[5] = normed[5] + (48/110) * normed[4]
-    normed[8] = normed[8] - (35/110) * normed[6]
+    # normed[5] = normed[5] - (45/110) * normed[4]
+    normed[5] = normed[5] - (40/110) * normed[4]
+    normed[8] = normed[8] - (40/110) * normed[6]
     print(normed)
     positions = normed * (hand.curled_bound - hand.tensioned_pos) + hand.tensioned_pos
-    positions[9] = normed[9] * (hand.curled_bound[9] - 1633) + 1633
-    positions[0] = normed[0] * (hand.curled_bound[0] - 2520) + 2520
-    positions[5] = normed[5] * (hand.curled_bound[5] - 1422) + 1422
-    positions[8] = normed[8] * (hand.curled_bound[8] - 2552) + 2552
-    # positions[1] = 2285 + normed[1] * abs(hand.curled_bound[1] - hand.tensioned_pos[1])
-    # positions[3] = 2070 - normed[3] * abs(hand.curled_bound[3] - hand.tensioned_pos[3])
-    # positions[7] = 2125 + normed[7] * abs(hand.curled_bound[7] - hand.tensioned_pos[7])
+    # positions[9] = normed[9] * (hand.curled_bound[9] - 800) + 800 #tensioned pos when MCP bend
+    # positions[0] = normed[0] * (hand.curled_bound[0] - 3000) + 3000
+    # positions[5] = normed[5] * (hand.curled_bound[5] - 1100) + 1100
+    # positions[8] = normed[8] * (hand.curled_bound[8] - 2750) + 2750
     print(positions)
     return positions
 
@@ -68,16 +67,17 @@ hand.close()
 """
 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 
-0 0 0 0 80 0 0 0 0 0 0 0 0 0 0 0
+-- index mcp test
+0 0 80 0 0 0 0 0 0 0 0 0 0 0 0 0
 
-0 0 0 0 0 0 0 0 0 0 30 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 60 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 50 60 0 0 0 0 0
-
-0 0 0 0 0 0 0 0 0 30 80 0 0 0 0 0
-
+-- middle mcp test
 0 0 0 0 0 0 0 0 0 0 80 0 0 0 0 0
-0 0 0 0 0 0 0 0 0 0 110 0 0 0 0 0
 
+-- ring mcp test
+0 0 0 0 80 0 0 0 0 0 0 0 0 0 0 0
+0 0 0 0 0 50 0 0 0 0 0 0 0 0 0 0
+
+-- pinky mcp test
+0 0 0 0 0 0 90 0 0 0 0 0 0 0 0 0
 
 """

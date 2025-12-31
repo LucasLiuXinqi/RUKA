@@ -200,7 +200,7 @@ SAMPLES_PER_POS = 10        # frames to sample at each stop
 SETTLE_PER_POS = 0.5       # s to wait after move (when not DRY)
 DRY_RUN = False              # if True, do not open or move the motor
 
-SAVE_PATH = "tracking_results_up_spring.npz"
+SAVE_PATH = "tracking_results_low_spring.npz"
 
 # --------------------------
 # Optional Dynamixel client import

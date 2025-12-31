@@ -202,7 +202,9 @@ class Hand:
         return
 
     def read_temp(self):
-        self.dxl_client.sync_read(self.motors, 146, 1)
+        return self.dxl_client.sync_read(
+            self.motors, ADDR_PRESENT_TEMP, LEN_PRESENT_TEMP
+        )
 
     @property
     def commanded_pos(self):
